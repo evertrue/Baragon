@@ -10,18 +10,18 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.hubspot.baragon.agent.BaragonAgentServiceModule;
 import com.hubspot.baragon.agent.config.LoadBalancerConfiguration;
-import com.hubspot.baragon.agent.models.LbConfigTemplate;
+import com.hubspot.baragon.agent.models.BaragonConfigTemplate;
 import com.hubspot.baragon.models.BaragonConfigFile;
 import com.hubspot.baragon.models.ServiceContext;
 
 @Singleton
-public class LbConfigGenerator {
+public class BaragonConfigGenerator {
   private final LoadBalancerConfiguration loadBalancerConfiguration;
-  private final Collection<LbConfigTemplate> templates;
+  private final Collection<BaragonConfigTemplate> templates;
   
   @Inject
-  public LbConfigGenerator(LoadBalancerConfiguration loadBalancerConfiguration,
-                           @Named(BaragonAgentServiceModule.AGENT_TEMPLATES) Collection<LbConfigTemplate> templates) {
+  public BaragonConfigGenerator(LoadBalancerConfiguration loadBalancerConfiguration,
+                                @Named(BaragonAgentServiceModule.AGENT_TEMPLATES) Collection<BaragonConfigTemplate> templates) {
     this.loadBalancerConfiguration = loadBalancerConfiguration;
     this.templates = templates;
   }
@@ -29,7 +29,7 @@ public class LbConfigGenerator {
   public Collection<BaragonConfigFile> generateConfigsForProject(ServiceContext snapshot) {
     final Collection<BaragonConfigFile> files = Lists.newArrayListWithCapacity(templates.size());
 
-    for (LbConfigTemplate template : templates) {
+    for (BaragonConfigTemplate template : templates) {
       final String filename = String.format(template.getFilename(), snapshot.getService().getServiceId());
 
       final StringWriter sw = new StringWriter();
@@ -48,7 +48,7 @@ public class LbConfigGenerator {
   public Collection<String> getConfigPathsForProject(String serviceId) {
     final Collection<String> paths = Lists.newArrayListWithCapacity(templates.size());
 
-    for (LbConfigTemplate template : templates) {
+    for (BaragonConfigTemplate template : templates) {
       final String filename = String.format(template.getFilename(), serviceId);
       paths.add(String.format("%s/%s", loadBalancerConfiguration.getRootPath(), filename));
     }

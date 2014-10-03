@@ -1,14 +1,19 @@
 package com.hubspot.baragon.agent.lbs;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.PumpStreamHandler;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.hubspot.baragon.agent.config.LoadBalancerConfiguration;
 import com.hubspot.baragon.exceptions.InvalidConfigException;
 import com.hubspot.baragon.exceptions.LbAdapterExecuteException;
-import org.apache.commons.exec.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 @Singleton
 public class LocalLbAdapter {
@@ -37,8 +42,10 @@ public class LocalLbAdapter {
     try {
       executeWithTimeout(CommandLine.parse(loadBalancerConfiguration.getCheckConfigCommand()), loadBalancerConfiguration.getCommandTimeoutMs());
     } catch (LbAdapterExecuteException e) {
+      System.out.println("!!! LbAdapterExecuteException: " + e.getOutput());
       throw new InvalidConfigException(e.getOutput());
     } catch (IOException e) {
+      System.out.println("!!! IOException: " + e.getMessage());
       throw new InvalidConfigException(e.getMessage());
     }
   }

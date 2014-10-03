@@ -9,6 +9,7 @@ import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -56,7 +57,7 @@ public class BootstrapManaged implements Managed {
       LOG.info("    Applying {}: [{}]", serviceState.getService(), JavaUtils.COMMA_JOINER.join(serviceState.getUpstreams()));
 
       try {
-        configHelper.apply(new ServiceContext(serviceState.getService(), serviceState.getUpstreams(), now, true), false);
+        configHelper.apply(Optional.<String>absent(), new ServiceContext(serviceState.getService(), serviceState.getUpstreams(), now, true), false);
       } catch (Exception e) {
         LOG.error(String.format("Caught exception while applying %s", serviceState.getService().getServiceId()), e);
       }

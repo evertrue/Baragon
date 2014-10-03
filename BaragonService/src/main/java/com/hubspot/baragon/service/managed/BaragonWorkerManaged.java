@@ -17,13 +17,15 @@ import com.google.inject.Inject;
 import com.hubspot.baragon.service.BaragonServiceModule;
 import com.hubspot.baragon.service.worker.BaragonRequestWorker;
 
-public class BaragonWorkerManaged implements Managed {
+public class BaragonWorkerManaged implements Managed, LeaderLatchListener {
   private static final Logger LOG = LoggerFactory.getLogger(BaragonWorkerManaged.class);
 
   private final ScheduledExecutorService executorService;
   private final BaragonRequestWorker worker;
   private final LeaderLatch leaderLatch;
   private final long workerIntervalMs;
+
+  private ScheduledFuture<?> future;
 
   @Inject
   public BaragonWorkerManaged(@Named(BaragonServiceModule.BARAGON_SERVICE_SCHEDULED_EXECUTOR) ScheduledExecutorService executorService,
@@ -34,31 +36,12 @@ public class BaragonWorkerManaged implements Managed {
     this.leaderLatch = leaderLatch;
     this.workerIntervalMs = workerIntervalMs;
     this.worker = worker;
+    this.future = null;
   }
 
   @Override
   public void start() throws Exception {
-    leaderLatch.addListener(new LeaderLatchListener() {
-      private ScheduledFuture<?> future = null;
-
-      @Override
-      public void isLeader() {
-        LOG.info("We are the leader!");
-
-        if (future != null) {
-          future.cancel(false);
-        }
-
-        future = executorService.scheduleAtFixedRate(worker, 0, workerIntervalMs, TimeUnit.MILLISECONDS);
-      }
-
-      @Override
-      public void notLeader() {
-        LOG.info("We are not the leader!");
-        future.cancel(false);
-      }
-    });
-
+    leaderLatch.addListener(this);
     leaderLatch.start();
   }
 
@@ -66,5 +49,22 @@ public class BaragonWorkerManaged implements Managed {
   public void stop() throws Exception {
     leaderLatch.close();
     executorService.shutdown();
+  }
+
+  @Override
+  public void isLeader() {
+    LOG.info("We are the leader!");
+
+    if (future != null) {
+      future.cancel(false);
+    }
+
+    future = executorService.scheduleAtFixedRate(worker, 0, workerIntervalMs, TimeUnit.MILLISECONDS);
+  }
+
+  @Override
+  public void notLeader() {
+    LOG.info("We are not the leader!");
+    future.cancel(false);
   }
 }

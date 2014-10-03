@@ -24,7 +24,7 @@ import com.hubspot.baragon.agent.config.TemplateConfiguration;
 import com.hubspot.baragon.agent.config.TestingConfiguration;
 import com.hubspot.baragon.agent.handlebars.FirstOfHelper;
 import com.hubspot.baragon.agent.handlebars.FormatTimestampHelper;
-import com.hubspot.baragon.agent.models.LbConfigTemplate;
+import com.hubspot.baragon.agent.models.BaragonConfigTemplate;
 import com.hubspot.baragon.config.AuthConfiguration;
 import com.hubspot.baragon.config.ZooKeeperConfiguration;
 import com.hubspot.baragon.data.BaragonLoadBalancerDatastore;
@@ -39,7 +39,9 @@ public class BaragonAgentServiceModule extends AbstractModule {
   public static final String AGENT_LOCK = "baragon.agent.lock";
   public static final String AGENT_TEMPLATES = "baragon.agent.templates";
   public static final String AGENT_MOST_RECENT_REQUEST_ID = "baragon.agent.mostRecentRequestId";
+  public static final String AGENT_ACTIVE_REQUEST_ID = "baragon.agent.activeRequestId";
   public static final String AGENT_LOCK_TIMEOUT_MS = "baragon.agent.lock.timeoutMs";
+  public static final String AGENT_LOCKED_AT = "baragon.agent.locked.at";
 
   @Override
   protected void configure() {
@@ -60,12 +62,12 @@ public class BaragonAgentServiceModule extends AbstractModule {
   @Provides
   @Singleton
   @Named(AGENT_TEMPLATES)
-  public Collection<LbConfigTemplate> providesTemplates(Handlebars handlebars,
+  public Collection<BaragonConfigTemplate> providesTemplates(Handlebars handlebars,
                                                 BaragonAgentConfiguration configuration) throws Exception {
-    Collection<LbConfigTemplate> templates = Lists.newArrayListWithCapacity(configuration.getTemplates().size());
+    Collection<BaragonConfigTemplate> templates = Lists.newArrayListWithCapacity(configuration.getTemplates().size());
 
     for (TemplateConfiguration templateConfiguration : configuration.getTemplates()) {
-      templates.add(new LbConfigTemplate(templateConfiguration.getFilename(), handlebars.compileInline(templateConfiguration.getTemplate())));
+      templates.add(new BaragonConfigTemplate(templateConfiguration.getFilename(), handlebars.compileInline(templateConfiguration.getTemplate())));
     }
 
     return templates;
@@ -145,6 +147,20 @@ public class BaragonAgentServiceModule extends AbstractModule {
   @Singleton
   @Named(AGENT_MOST_RECENT_REQUEST_ID)
   public AtomicReference<String> providesMostRecentRequestId() {
+    return new AtomicReference<>();
+  }
+
+  @Provides
+  @Singleton
+  @Named(AGENT_ACTIVE_REQUEST_ID)
+  public AtomicReference<String> providesActiveRequestId() {
+    return new AtomicReference<>();
+  }
+
+  @Provides
+  @Singleton
+  @Named(AGENT_LOCKED_AT)
+  public AtomicReference<Long> providesAgentLockedAt() {
     return new AtomicReference<>();
   }
 }

@@ -1,13 +1,19 @@
 package com.hubspot.baragon.agent.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.jknack.handlebars.Template;
 import com.google.common.base.Objects;
 
-public class LbConfigTemplate {
+@JsonIgnoreProperties( ignoreUnknown = true )
+public class BaragonConfigTemplate {
   private final String filename;
   private final Template template;
 
-  public LbConfigTemplate(String filename, Template template) {
+  @JsonCreator
+  public BaragonConfigTemplate(@JsonProperty("filename") String filename,
+                               @JsonProperty("template") Template template) {
     this.filename = filename;
     this.template = template;
   }
@@ -22,7 +28,7 @@ public class LbConfigTemplate {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(LbConfigTemplate.class)
+    return Objects.toStringHelper(BaragonConfigTemplate.class)
         .add("filename", filename)
         .add("template", template)
         .toString();
@@ -38,7 +44,7 @@ public class LbConfigTemplate {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    LbConfigTemplate that = (LbConfigTemplate) o;
+    BaragonConfigTemplate that = (BaragonConfigTemplate) o;
 
     if (!filename.equals(that.filename)) return false;
     if (!template.equals(that.template)) return false;
