@@ -30,6 +30,10 @@ public class BaragonService {
 
   private final Map<String, Object> options;
 
+  public static BaragonServiceBuilder builder(String serviceId, String serviceBasePath) {
+    return new BaragonServiceBuilder(serviceId, serviceBasePath);
+  }
+
   public BaragonService(@JsonProperty("serviceId") String serviceId,
                         @JsonProperty("owners") Collection<String> owners,
                         @JsonProperty("serviceBasePath") String serviceBasePath,

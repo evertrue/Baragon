@@ -1,15 +1,16 @@
 package com.hubspot.baragon.models;
 
+import java.util.List;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import java.util.List;
 
 @JsonIgnoreProperties( ignoreUnknown = true )
 public class BaragonRequest {
@@ -26,6 +27,10 @@ public class BaragonRequest {
 
   @NotNull
   private final List<UpstreamInfo> removeUpstreams;
+
+  public static BaragonRequestBuilder builder(String loadBalancerRequestId, BaragonService loadBalancerService) {
+    return new BaragonRequestBuilder(loadBalancerRequestId, loadBalancerService);
+  }
 
   @JsonCreator
   public BaragonRequest(@JsonProperty("loadBalancerRequestId") String loadBalancerRequestId,
