@@ -2,6 +2,7 @@ package com.hubspot.baragon.data;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -47,8 +48,8 @@ public class BaragonLoadBalancerDatastore extends AbstractDataStore {
     }
   }
 
-  public Collection<String> getClusters() {
-    return getChildren(LOAD_BALANCER_GROUPS_FORMAT);
+  public Set<String> getLoadBalancerGroups() {
+    return new HashSet<>(getChildren(LOAD_BALANCER_GROUPS_FORMAT));
   }
 
   public Collection<BaragonAgentMetadata> getAgentMetadata(String clusterName) {

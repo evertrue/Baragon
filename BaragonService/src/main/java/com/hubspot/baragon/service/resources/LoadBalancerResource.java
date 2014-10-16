@@ -34,8 +34,8 @@ public class LoadBalancerResource {
   }
 
   @GET
-  public Collection<String> getClusters() {
-    return loadBalancerDatastore.getClusters();
+  public Collection<String> getLoadBalancerGroups() {
+    return loadBalancerDatastore.getLoadBalancerGroups();
   }
   
   @GET

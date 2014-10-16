@@ -1,12 +1,17 @@
 package com.hubspot.baragon.managers;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.hubspot.baragon.data.BaragonAgentResponseDatastore;
@@ -21,9 +26,12 @@ import com.hubspot.baragon.models.BaragonResponse;
 import com.hubspot.baragon.models.BaragonService;
 import com.hubspot.baragon.models.InternalRequestStates;
 import com.hubspot.baragon.models.QueuedRequestId;
+import com.hubspot.baragon.models.UpstreamInfo;
 
 @Singleton
 public class RequestManager {
+  private static final Logger LOG = LoggerFactory.getLogger(RequestManager.class);
+
   private final BaragonRequestDatastore requestDatastore;
   private final BaragonLoadBalancerDatastore loadBalancerDatastore;
   private final BaragonStateDatastore stateDatastore;
@@ -88,21 +96,24 @@ public class RequestManager {
     }
   }
 
-  private void ensureRequestedLoadBalancersExist(BaragonRequest request) throws MissingLoadBalancerGroupException {
-    final BaragonService service = request.getLoadBalancerService();
-    final Collection<String> loadBalancerGroups = loadBalancerDatastore.getClusters();
+  public Set<String> getMissingLoadBalancerGroups(BaragonRequest request) {
+    final Set<String> desiredLoadBalancerGroups = new HashSet<>(request.getLoadBalancerService().getLoadBalancerGroups());
+    final Set<String> currentLoadBalancerGroups = loadBalancerDatastore.getLoadBalancerGroups();
 
-    final Collection<String> missingGroups = Lists.newArrayListWithCapacity(service.getLoadBalancerGroups().size());
+    return Sets.difference(desiredLoadBalancerGroups, currentLoadBalancerGroups);
+  }
 
-    for (String loadBalancerGroup : service.getLoadBalancerGroups()) {
-      if (!loadBalancerGroups.contains(loadBalancerGroup)) {
-        missingGroups.add(loadBalancerGroup);
-      }
+  public boolean requestHasChanges(BaragonRequest request) {
+    final Set<String> currentUpstreams = new HashSet<>(stateDatastore.getUpstreams(request.getLoadBalancerService().getServiceId()));
+    final Set<String> removeUpstreamHostnames = new HashSet<>();
+    final Set<String> addUpstreamHostnames = new HashSet<>();
+    for (UpstreamInfo upstreamInfo : request.getAddUpstreams()) {
+      addUpstreamHostnames.add(upstreamInfo.getUpstream());
     }
-
-    if (!missingGroups.isEmpty()) {
-      throw new MissingLoadBalancerGroupException(request, missingGroups);
+    for (UpstreamInfo upstreamInfo : request.getRemoveUpstreams()) {
+      removeUpstreamHostnames.add(upstreamInfo.getUpstream());
     }
+    return !currentUpstreams.containsAll(request.getAddUpstreams()) || !Sets.intersection(currentUpstreams, removeUpstreamHostnames).isEmpty();
   }
 
   public BaragonResponse enqueueRequest(BaragonRequest request) throws BasePathConflictException, MissingLoadBalancerGroupException {
@@ -113,17 +124,16 @@ public class RequestManager {
     }
 
     ensureBasePathAvailable(request);
-    ensureRequestedLoadBalancersExist(request);
 
     requestDatastore.addRequest(request);
-    requestDatastore.setRequestState(request.getLoadBalancerRequestId(), InternalRequestStates.SEND_APPLY_REQUESTS);
+    requestDatastore.setRequestState(request.getLoadBalancerRequestId(), InternalRequestStates.PENDING);
     requestDatastore.enqueueRequest(request);
 
     for (String loadBalancerGroup : request.getLoadBalancerService().getLoadBalancerGroups()) {
       loadBalancerDatastore.setBasePathServiceId(loadBalancerGroup, request.getLoadBalancerService().getServiceBasePath(), request.getLoadBalancerService().getServiceId());
     }
 
-    return new BaragonResponse(request.getLoadBalancerRequestId(), InternalRequestStates.SEND_APPLY_REQUESTS.toRequestState(), Optional.<String>absent(), Optional.<Map<String, Collection<AgentResponse>>>absent());
+    return new BaragonResponse(request.getLoadBalancerRequestId(), InternalRequestStates.PENDING.toRequestState(), Optional.<String>absent(), Optional.<Map<String, Collection<AgentResponse>>>absent());
   }
 
   public Optional<InternalRequestStates> cancelRequest(String requestId) {
