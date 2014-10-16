@@ -2,6 +2,7 @@ package com.hubspot.baragon;
 
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -26,7 +27,7 @@ import com.hubspot.baragon.models.BaragonAuthKey;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 
-public class BaragonBaseModule extends AbstractModule {
+public class BaragonDataModule extends AbstractModule {
   public static final String BARAGON_AGENT_REQUEST_URI_FORMAT = "baragon.agent.request.uri.format";
   public static final String BARAGON_AGENT_MAX_ATTEMPTS = "baragon.agent.maxAttempts";
   public static final String BARAGON_SERVICE_HTTP_CLIENT = "baragon.service.http.client";
@@ -37,6 +38,8 @@ public class BaragonBaseModule extends AbstractModule {
   public static final String BARAGON_AUTH_PATH_CACHE = "baragon.auth.pathCache";
 
   public static final String BARAGON_ZK_CONNECTION_STATE = "baragon.zk.connectionState";
+
+  public static final String BARAGON_WORKER_LAST_START = "baragon.worker.lastStartedAt";
 
   @Override
   protected void configure() {
@@ -115,5 +118,12 @@ public class BaragonBaseModule extends AbstractModule {
   @Named(BARAGON_AUTH_PATH_CACHE)
   public PathChildrenCache providesAuthPathChildrenCache(CuratorFramework curatorFramework) {
     return new PathChildrenCache(curatorFramework, BaragonAuthDatastore.AUTH_KEYS_PATH, false);
+  }
+
+  @Provides
+  @Singleton
+  @Named(BARAGON_WORKER_LAST_START)
+  public AtomicLong providesWorkerLastStartAt() {
+    return new AtomicLong();
   }
 }

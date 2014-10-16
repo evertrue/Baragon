@@ -5,7 +5,6 @@ import io.dropwizard.server.SimpleServerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 
@@ -14,7 +13,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.hubspot.baragon.BaragonBaseModule;
+import com.hubspot.baragon.BaragonDataModule;
 import com.hubspot.baragon.config.AuthConfiguration;
 import com.hubspot.baragon.config.HttpClientConfiguration;
 import com.hubspot.baragon.config.ZooKeeperConfiguration;
@@ -27,7 +26,6 @@ public class BaragonServiceModule extends AbstractModule {
   public static final String BARAGON_SERVICE_SCHEDULED_EXECUTOR = "baragon.service.scheduledExecutor";
   public static final String BARAGON_SERVICE_LEADER_LATCH = "baragon.service.leaderLatch";
   public static final String BARAGON_SERVICE_WORKER_INTERVAL_MS = "baragon.service.worker.intervalMs";
-  public static final String BARAGON_SERVICE_WORKER_LAST_START = "baragon.service.worker.lastStartedAt";
 
   public static final String BARAGON_SERVICE_HTTP_PORT = "baragon.service.http.port";
   public static final String BARAGON_SERVICE_HOSTNAME = "baragon.service.hostname";
@@ -36,7 +34,7 @@ public class BaragonServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    install(new BaragonBaseModule());
+    install(new BaragonDataModule());
   }
 
   @Provides
@@ -50,13 +48,13 @@ public class BaragonServiceModule extends AbstractModule {
   }
 
   @Provides
-  @Named(BaragonBaseModule.BARAGON_AGENT_REQUEST_URI_FORMAT)
+  @Named(BaragonDataModule.BARAGON_AGENT_REQUEST_URI_FORMAT)
   public String provideAgentUriFormat(BaragonConfiguration configuration) {
     return configuration.getAgentRequestUriFormat();
   }
 
   @Provides
-  @Named(BaragonBaseModule.BARAGON_AGENT_MAX_ATTEMPTS)
+  @Named(BaragonDataModule.BARAGON_AGENT_MAX_ATTEMPTS)
   public Integer provideAgentMaxAttempts(BaragonConfiguration configuration) {
     return configuration.getAgentMaxAttempts();
   }
@@ -77,13 +75,6 @@ public class BaragonServiceModule extends AbstractModule {
   @Named(BARAGON_SERVICE_SCHEDULED_EXECUTOR)
   public ScheduledExecutorService providesScheduledExecutor() {
     return Executors.newScheduledThreadPool(1);
-  }
-
-  @Provides
-  @Singleton
-  @Named(BARAGON_SERVICE_WORKER_LAST_START)
-  public AtomicLong providesWorkerLastStartAt() {
-    return new AtomicLong();
   }
 
   @Provides
