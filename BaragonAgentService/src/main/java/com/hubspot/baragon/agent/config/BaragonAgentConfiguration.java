@@ -4,6 +4,7 @@ import io.dropwizard.Configuration;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -38,6 +39,10 @@ public class BaragonAgentConfiguration extends Configuration {
 
   @JsonProperty("hostname")
   private String hostname;
+
+  @JsonProperty("metadata")
+  @NotNull
+  private Optional<Map<String, String>> metadata;
 
   @JsonProperty("agentLockTimeoutMs")
   @Min(0)
@@ -128,5 +133,13 @@ public class BaragonAgentConfiguration extends Configuration {
 
   public void setDefaultDateFormat(String defaultDateFormat) {
     this.defaultDateFormat = defaultDateFormat;
+  }
+
+  public Optional<Map<String, String>> getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata(Optional<Map<String, String>> metadata) {
+    this.metadata = metadata;
   }
 }
